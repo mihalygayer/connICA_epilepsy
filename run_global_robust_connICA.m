@@ -17,7 +17,7 @@ clearvars A icasig
 while c ~= configs.numRuns+1 % be careful might run for very long
     [icasig_onerun,A_onerun,~] = fastica(connICA_matrix,'approach','symm','numOfIC',configs.numOfIC,'verbose','off',...
         'epsilon',configs.epsilon,'maxNumIterations',configs.maxNumIterations,...
-        'maxFinetune',configs.maxFinetune, 'lastEig', configs.lastEig, 'sampleSize', configs.bootstrap);%running fastica
+        'maxFinetune',configs.maxFinetune, 'lastEig', configs.lastEig);%running fastica
     [warnMsg, warnId] = lastwarn;
     
     c_max=c_max+1;
@@ -38,10 +38,10 @@ while c ~= configs.numRuns+1 % be careful might run for very long
 end
 
 if c_max==configs.numRuns_max 
-    RC=[];
+    RC=['Reached numRuns_max ', num2str(configs.numRuns_max), '. ', num2str(c) ,' successful runs out of desired ', num2str(configs.numRuns)];
     RC_Index=[];
     clc;
-    warning('fastICA did not find results enough times with this ICA setup')
+    warning(['fastICA did not find results enough times with this ICA setup.', num2str(c) ,' successful runs out of desired ', num2str(configs.numRuns)])
 else % Continue with everything if we succeeded with the previous step.
 
     
@@ -52,9 +52,10 @@ aux=(freq>configs.minFreq);
 RC_Index = find(aux(:,1)); % Robust Components Index the numbers of components we keep.
  
 if isempty(RC_Index)
-    RC=[];
+    RC=['No robust traits'];
     RC_Index=[];
     warning('No Robust FC traits found!')
+    return
 else
     RC = struct;
 for t=1:length(RC_Index) % 1 to 5, or as many as robust traits find previously
