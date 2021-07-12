@@ -1,8 +1,8 @@
 %% Run the entire robust connICA algorithm with fastICA
+% numberOfIC and lstEig is removed from the configs and need to be specified outside the configs so that the loop can run in paralell
+function [RC, RC_Index] = run_global_robust_connICA_parallel(connICA_matrix, configs, numberOfIC, lstEig)
 
-function [RC, RC_Index] = run_global_robust_connICA(connICA_matrix, configs)
-
-if configs.lastEig<configs.numOfIC 
+if lstEig<numberOfIC 
     RC=[];
     RC_Index=[];
     clc;
@@ -15,9 +15,9 @@ c=1;     % run count when algorithm converged
 c_max=0; % run count for all iterations
 clearvars A icasig
 while c ~= configs.numRuns+1 % be careful might run for very long
-    [icasig_onerun,A_onerun,~] = fastica(connICA_matrix,'approach','symm','numOfIC',configs.numOfIC,'verbose','off',...
+    [icasig_onerun,A_onerun,~] = fastica(connICA_matrix,'approach','symm','numOfIC',numberOfIC,'verbose','off',...
         'epsilon',configs.epsilon,'maxNumIterations',configs.maxNumIterations,...
-        'maxFinetune',configs.maxFinetune, 'lastEig', configs.lastEig);%running fastica
+        'maxFinetune',configs.maxFinetune, 'lastEig', lstEig);%running fastica
     [warnMsg, warnId] = lastwarn;
     
     c_max=c_max+1;
@@ -46,7 +46,7 @@ else % Continue with everything if we succeeded with the previous step.
 
     
 % Robust trait extraction:dr Enrico Amico 2017
-[comp_match_run1, freq] = run_robust_connICA_fast(A,icasig,configs); % comp_mach_run1 stores the robust component ID per connICA run
+[comp_match_run1, freq] = run_robust_connICA_fast_parallel(A,icasig,configs, numberOfIC, lstEig); % comp_mach_run1 stores the robust component ID per connICA run
 aux=(freq>configs.minFreq); 
 
 RC_Index = find(aux(:,1)); % Robust Components Index the numbers of components we keep.
@@ -84,7 +84,7 @@ for t=1:length(RC_Index) % 1 to 5, or as many as robust traits find previously
     RC(t).matrix(configs.mask)=RC(t).vector; %fill upper triangular
     RC(t).matrix = RC(t).matrix + (RC(t).matrix'); %symmetrize matrix
     RC(t).weights = weights; % store Robust component weights 
-    RC=rmfield(RC, 'vector'); % remove field: minimize storage delete vector
+    RC=rmfield(RC, 'vector');
 %     RC(t).weights_mean= nanmean(weights'); % to be confirmed
 %     RC(t).median_weights_mean=median(RC(t).weights_mean);
 %     RC(t).weights_std=nanstd(weights');
