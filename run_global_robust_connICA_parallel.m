@@ -1,10 +1,11 @@
 %% Run the entire robust connICA algorithm with fastICA
 % numberOfIC and lstEig is removed from the configs and need to be specified outside the configs so that the loop can run in paralell
-function [RC, RC_Index] = run_global_robust_connICA_parallel(connICA_matrix, configs, numberOfIC, lstEig)
+function [RC, RC_Index, rc] = run_global_robust_connICA_parallel(connICA_matrix, configs, numberOfIC, lstEig)
 
 if lstEig<numberOfIC 
     RC=[];
     RC_Index=[];
+    rc=[];
     clc;
     warning('Number of PC is smaller than number of IC. fastICA did not run with this ICA setup')
 else 
@@ -40,6 +41,7 @@ end
 if c_max==configs.numRuns_max 
     RC=['Reached numRuns_max ', num2str(configs.numRuns_max), '. ', num2str(c) ,' successful runs out of desired ', num2str(configs.numRuns)];
     RC_Index=[];
+    rc=['Reached numRuns_max ', num2str(configs.numRuns_max), '. ', num2str(c) ,' successful runs out of desired ', num2str(configs.numRuns)];
     clc;
     warning(['fastICA did not find results enough times with this ICA setup.', num2str(c) ,' successful runs out of desired ', num2str(configs.numRuns)])
 else % Continue with everything if we succeeded with the previous step.
@@ -54,10 +56,12 @@ RC_Index = find(aux(:,1)); % Robust Components Index the numbers of components w
 if isempty(RC_Index)
     RC=['No robust traits'];
     RC_Index=[];
+    rc=['No robust traits'];
     warning('No Robust FC traits found!')
     return
 else
     RC = struct;
+    rc = struct; % includes Ratio of Robust and Weights variance information only, for Comb. Ind.
 for t=1:length(RC_Index) % 1 to 5, or as many as robust traits find previously
     compIndex=RC_Index(t); % choose the component(order of component) we want to look at 
     icasig_comp = nan(configs.numRuns,size(connICA_matrix,2));
@@ -78,13 +82,18 @@ for t=1:length(RC_Index) % 1 to 5, or as many as robust traits find previously
     end
 
     clear comp;
-    RC(t).vector = [];
-    RC(t).vector = nanmean(icasig_comp); %avg per column (across runs)
-    RC(t).matrix = zeros(configs.numRegions,configs.numRegions);
-    RC(t).matrix(configs.mask)=RC(t).vector; %fill upper triangular
-    RC(t).matrix = RC(t).matrix + (RC(t).matrix'); %symmetrize matrix
-    RC(t).weights = weights; % store Robust component weights 
-    RC=rmfield(RC, 'vector');
+    % Calculations are commented because no need for this information, for the Combined Index at this point, uncomment if necessary
+%     RC(t).vector = [];
+%     RC(t).vector = nanmean(icasig_comp); %avg per column (across runs)
+%     RC(t).matrix = zeros(configs.numRegions,configs.numRegions);
+%     RC(t).matrix(configs.mask)=RC(t).vector; %fill upper triangular
+%     RC(t).matrix = RC(t).matrix + (RC(t).matrix'); %symmetrize matrix
+%     RC=rmfield(RC, 'vector'); % decrease storage space
+%     RC(t).weights = weights; % store Robust component weights 
+      RC(t).trait_weights_var=nanvar(weights');
+      RC(t).trait_weights_var_real=nanvar(weights')./abs(nanmean(weights'));
+    
+    
 %     RC(t).weights_mean= nanmean(weights'); % to be confirmed
 %     RC(t).median_weights_mean=median(RC(t).weights_mean);
 %     RC(t).weights_std=nanstd(weights');
@@ -97,7 +106,10 @@ for t=1:length(RC_Index) % 1 to 5, or as many as robust traits find previously
 %     RC(t).inf_trait=round(sum(abs(RC(t).vector)),2);
     
 end
-RC(1).configs=configs
+%RC(1).configs=configs
+%rc.weights_var=mean([RC.trait_weights_var]);
+rc.ratio_of_robust=length(RC_Index)/numberOfIC;
+rc.weights_var_real=mean([RC.trait_weights_var_real]); % over all traits and all subjects the mean relative variation of IC weights
 end
 end
 end

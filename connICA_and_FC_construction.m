@@ -16,7 +16,7 @@
 % 6. Explore participant information in each group
 % 7. Extract FDA movement information for each subject
 %%
-clearvars;
+%clearvars;
 clc; addpath('C:\Users\user\Documents\Enrico\12_Consciousness_Connectomics')
 
 %% Configuration - Dr. Enrico Amico code from Class of N.N. 2020
@@ -102,7 +102,6 @@ end
 %% llte - 14 subjects
 % Dr. Jonathan Wirsich, 2021.03
 load eeg-fmri_connectomes_destrieux_scrubbed_truncTo5min_256Ch3T_eeg-fmri-geneva_ltle_notimeslice.mat
-%%
 FC_ltle=struct;
 for i = 1:length(subj)
  mrtx = zeros(148); 
@@ -127,6 +126,8 @@ end
 %% Save 
 % save FC_rtle.mat FC_rtle
 % save FC_ltle.mat FC_ltle
+% save connICA_matrix_epilepsy_rtle.mat connICA_matrix_epilepsy_rtle
+% save connICA_matrix_epilepsy_ltle.mat connICA_matrix_epilepsy_ltle
 %% Both epilepsy, merge
 connICA_matrix_epilepsy=[connICA_matrix_epilepsy_rtle; connICA_matrix_epilepsy_ltle];
 FC_epilepsy=[FC_rtle, FC_ltle];
